@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tense Detective — EP (Arcade Neon Upgrade)</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700;900&family=Orbitron:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#0a0f1f; --bg2:#111a33; --ink:#eaf2ff; --muted:#bed4ff;
+    --wire:rgba(75,209,255,.35); --accent:#4bd1ff; --accent2:#7aff9b; --danger:#ff6b6b; --gold:#ffd56b;
+    --pink:#ff7edb; --vio:#a78bfa; --cyan:#67e8f9; --lime:#86efac;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;color:var(--ink);font-family:"Kanit",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:
+      radial-gradient(1200px 640px at 50% -10%, #1a2a5a 0%, #0a0f1f 55%, #060a14 100%);
+    overflow-x:hidden;
+  }
+  /* animated nebula */
+  .bgfx{position:fixed;inset:-10% -10% auto -10%;height:60vh;pointer-events:none;filter:blur(40px) saturate(1.4);opacity:.55;z-index:-1;
+        background: conic-gradient(from 0deg, #00ffd5, #7c3aed, #ff00a8, #00ffd5);
+        animation: spin 16s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .wrap{max-width:1100px;margin:auto;padding:20px 14px 96px}
+  header{display:grid;justify-items:center;text-align:center;gap:8px;margin-bottom:16px}
+  .brand{font-family:"Orbitron";font-weight:800;letter-spacing:.06em;
+    font-size:clamp(22px,4.6vw,42px);
+    background:linear-gradient(90deg,#4bd1ff,#cc77ff,#ffd56b);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 28px rgba(75,209,255,.25)}
+  .subtitle{color:var(--muted);font-size:clamp(14px,3.6vw,18px)}
+
+  .hud{
+    display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;
+    border:1px solid var(--wire);
+    background:linear-gradient(180deg,rgba(20,32,64,.72),rgba(8,12,24,.72));
+    border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,.45);padding:12px 14px;margin-bottom:14px}
+  .badge{padding:8px 12px;border:1px solid var(--wire);border-radius:10px;background:rgba(75,209,255,.1);color:#bfeaff;font-weight:800;font-size:clamp(12px,3.2vw,16px)}
+  .score{font-weight:900;font-size:clamp(18px,5vw,24px);color:var(--gold)}
+  .combo{font-weight:900;color:#7aff9b}
+  .meter{
+    grid-column:1/-1;margin-top:6px;height:12px;border-radius:999px;
+    background:rgba(255,255,255,.06);overflow:hidden;border:1px solid rgba(255,255,255,.12)}
+  .meter>div{height:100%;width:100%;background:linear-gradient(90deg,#22d3ee,#f0abfc,#fde047);transform-origin:left center}
+
+  .case{
+    border:1px solid var(--wire);border-radius:16px;
+    background:linear-gradient(180deg,rgba(18,28,58,.92),rgba(8,12,24,.92));
+    padding:18px;box-shadow:0 16px 48px rgba(0,0,0,.45)
+  }
+  .case .title{display:flex;gap:10px;align-items:center;font-weight:800;font-size:clamp(18px,4.2vw,22px)}
+  .case-id{font-family:"Orbitron";font-size:clamp(12px,3.2vw,14px);letter-spacing:.06em;padding:6px 10px;border-radius:999px;border:1px solid var(--wire);color:#bfeaff;background:rgba(75,209,255,.08)}
+  .stem{margin-top:12px;padding:16px;border-radius:14px;background:rgba(16,27,64,.6);border:1px dashed var(--wire);font-size:clamp(20px,5vw,30px);line-height:1.5}
+
+  .choices{display:grid;gap:12px;margin-top:16px}
+  .choice{
+    position:relative;border:2px solid rgba(255,255,255,.12);
+    background:linear-gradient(145deg, rgba(103,232,249,.15), rgba(167,139,250,.15));
+    color:#e6ffe9;padding:16px 18px;border-radius:14px;cursor:pointer;font-weight:900;font-size:clamp(18px,5vw,28px);
+    box-shadow:0 8px 20px rgba(0,0,0,.25);transition:transform .06s, filter .2s, box-shadow .2s}
+  .choice:hover{transform:translateY(-1px);box-shadow:0 12px 26px rgba(0,0,0,.3)}
+  .choice b.badge{
+    position:absolute;left:10px;top:10px;border-color:transparent;
+    background:linear-gradient(90deg,#22d3ee,#f0abfc);color:#0b1120;box-shadow:inset 0 0 0 2px rgba(255,255,255,.15)}
+  .choice.correct{outline:3px solid var(--accent2);box-shadow:0 0 26px rgba(122,255,155,.35)}
+  .choice.wrong{outline:3px solid var(--danger);box-shadow:0 0 22px rgba(255,107,107,.35)}
+
+  .toolbox{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .tool{
+    border:1px solid var(--wire);background:#111b35;color:#d8eaff;padding:12px 14px;border-radius:12px;cursor:pointer;font-weight:800;font-size:clamp(15px,4.2vw,20px)}
+  .tool.used{opacity:.6}
+  .panel{margin-top:10px;display:none}
+  .panel.show{display:block;animation:fade .22s ease}
+  .panel .hint{border:1px solid var(--wire);border-radius:12px;padding:12px 14px;background:rgba(75,209,255,.08);color:#bfeaff;font-size:clamp(16px,4vw,22px)}
+
+  .status{margin-top:12px;font-weight:800;font-size:clamp(16px,4.2vw,22px)}
+  .ok{color:#b8ffcf}.bad{color:#ffb3b3}
+
+  .footer{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+  .next{border:1px solid var(--wire);background:linear-gradient(90deg,rgba(75,209,255,.18),rgba(204,119,255,.18));color:#eaf6ff;padding:14px 18px;border-radius:12px;cursor:pointer;font-weight:900;font-size:clamp(16px,4.2vw,22px)}
+
+  .endcard{display:none;margin-top:18px;padding:20px;border-radius:16px;border:1px solid var(--wire);
+           background:linear-gradient(180deg,rgba(20,32,64,.85),rgba(8,12,24,.92));text-align:center}
+  .endcard.show{display:block;animation:pop .25s ease}
+  .endcard h2{margin:6px 0 0;font-size:clamp(22px,5vw,28px)}
+  .rank{font-size:clamp(16px,4vw,20px);font-weight:900;margin-top:6px}
+  canvas.fire{position:fixed;inset:0;pointer-events:none}
+
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @keyframes pop{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+  @media (max-width:600px){.wrap{padding:16px 12px 84px}}
+</style>
+</head>
+<body>
+<div class="bgfx"></div>
+<div class="wrap">
+  <header>
+    <div class="brand">Tense Detective — Arcade EP</div>
+    <div class="subtitle">กติกา: ตอบไวได้คะแนนเพิ่ม • ใช้เครื่องมือช่วยได้ 3 แบบ • คอมโบถูกติดกัน x1.2 / x1.5</div>
+  </header>
+
+  <div class="hud">
+    <div class="badge">Arcade Neon</div>
+    <div class="score">คะแนน: <span id="total">0</span></div>
+    <div class="combo">COMBO: <span id="combo">x1.0</span></div>
+    <div class="meter"><div id="timebar"></div></div>
+  </div>
+
+  <div class="case" id="caseBox">
+    <div class="title"><span class="case-id" id="caseId">CASE-001</span> <span id="caseTitle">Choose the correct tense</span></div>
+    <div class="stem" id="stem">—</div>
+
+    <div class="choices" id="choices"></div>
+
+    <div class="toolbox">
+      <button class="tool" id="hintBtn">🧭 Hint: Time Marker (-2 คะแนนสูงสุด)</button>
+      <button class="tool" id="fiftyBtn">✂️ 50:50 (ตัด 2 ช้อยส์ผิด)</button>
+      <button class="tool" id="freezeBtn">🧊 Freeze (หยุดเวลา 5 วิ)</button>
+    </div>
+    <div class="panel" id="hintPanel"><div class="hint" id="hintText">—</div></div>
+
+    <div class="status" id="status"></div>
+    <div class="footer">
+      <button class="next" id="nextBtn" disabled>ข้อต่อไป →</button>
+      <div class="badge">คะแนนข้อนี้ (สูงสุด 5): <span id="slot">5</span></div>
+    </div>
+  </div>
+
+  <div class="endcard" id="endCard">
+    <div class="badge">FBI GRAMMAR UNIT</div>
+    <h2 id="endTitle">Mission Complete!</h2>
+    <p id="endMsg">—</p>
+    <div class="footer" style="justify-content:center;gap:10px">
+      <button class="next" onclick="location.reload()">เล่นอีกครั้ง</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="fire1" class="fire"></canvas>
+<canvas id="fire2" class="fire"></canvas>
+
+<script>
+/* ===== Dataset (ตัวอย่าง 10 ข้อ) — ใส่ชุดของ EP นี้ต่อได้ ===== */
+/* อ้างอิงรูปแบบเดิมของไฟล์ครู (โครง A–D พร้อม hint/why)  :contentReference[oaicite:1]{index=1} */
+const ITEMS = [
+  {id:'001', stem:'She ____ English for three years.', opts:['studies','studied','has studied','is studying'], key:2, hint:'for + ระยะเวลา → Present Perfect', why:'ต่อเนื่องถึงปัจจุบัน → has studied'},
+  {id:'002', stem:'They ____ the bus on Mondays.',    opts:['take','takes','took','are taking'], key:0, hint:'on Mondays → habit → Present Simple', why:'ประธานพหุพจน์ → V1 → take'},
+  {id:'003', stem:'I ____ lunch right now.',           opts:['have','am having','had','will have'], key:1, hint:'right now → Present Continuous', why:'กำลังกระทำตอนนี้ → am having'},
+  {id:'004', stem:'He ____ his phone yesterday.',      opts:['breaks','break','broke','has broken'], key:2, hint:'yesterday → Past Simple', why:'V2 ของ break คือ broke'},
+  {id:'005', stem:'We ____ Chiang Mai next month.',    opts:['visit','visited','will visit','are visited'], key:2, hint:'next month → Future (will)', why:'บอกอนาคต → will visit'},
+  {id:'006', stem:'She has ____ finished.',            opts:['already','yet','ever','never'], key:0, hint:'already → Present Perfect', why:'has already finished'},
+  {id:'007', stem:'We ____ at the moment.',            opts:['work','worked','are working','have worked'], key:2, hint:'at the moment → Present Continuous', why:'are working'},
+  {id:'008', stem:'They ____ to a new house two years ago.', opts:['move','moved','have moved','are moving'], key:1, hint:'ago → Past Simple', why:'moved'},
+  {id:'009', stem:'He ____ to start a new job next week.',   opts:['is going','will','was','has'], key:0, hint:'plan + next week → going to', why:'is going to start'},
+  {id:'010', stem:'I ____ before bed every night.',          opts:['read','reads','am reading','readed'], key:0, hint:'every night → habit', why:'read (V1)'}
+];
+
+/* ===== State ===== */
+let idx=0,total=0,slot=5,answered=false,combo=1.0;
+let timer=null, startTime=0, perQms=15000, frozen=false, freezeLeft=0;
+
+/* ===== Elements ===== */
+const elTotal=document.getElementById('total');
+const elCombo=document.getElementById('combo');
+const elTimebar=document.getElementById('timebar');
+const elCaseId=document.getElementById('caseId');
+const elStem=document.getElementById('stem');
+const elChoices=document.getElementById('choices');
+const elStatus=document.getElementById('status');
+const elNext=document.getElementById('nextBtn');
+const elSlot=document.getElementById('slot');
+const elHintBtn=document.getElementById('hintBtn');
+const elHintPanel=document.getElementById('hintPanel');
+const elHintText=document.getElementById('hintText');
+const el5050=document.getElementById('fiftyBtn');
+const elFreeze=document.getElementById('freezeBtn');
+
+/* ===== Audio (WebAudio, no external files) ===== */
+let audioCtx=null; function ensureAudio(){ if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); } }
+function beep(f=880,d=.08,type='triangle',vol=.12){
+  try{ ensureAudio(); const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type; o.frequency.value=f; g.gain.value=vol; o.connect(g); g.connect(audioCtx.destination);
+    o.start(); setTimeout(()=>o.stop(), d*1000);}catch(e){}
+}
+function okSFX(){ beep(900,.07,'triangle',.14); setTimeout(()=>beep(1120,.07,'triangle',.13),110); setTimeout(()=>beep(1350,.09,'triangle',.12),220); }
+function badSFX(){ ensureAudio(); const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+  o.type='sawtooth'; o.frequency.setValueAtTime(300,audioCtx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(110,audioCtx.currentTime+.35);
+  g.gain.value=.14; o.connect(g); g.connect(audioCtx.destination); o.start(); setTimeout(()=>o.stop(), 380);
+}
+function tickSFX(){ beep(950,.06,'square',.11); }
+
+/* ===== Fireworks (end) ===== */
+function fireworks(canvas){
+  const ctx=canvas.getContext('2d'); canvas.width=innerWidth; canvas.height=innerHeight;
+  const parts=[];
+  for(let k=0;k<7;k++){
+    const cx=Math.random()*canvas.width, cy=Math.random()*canvas.height*.5+canvas.height*.1, col=`hsl(${Math.random()*360},90%,60%)`;
+    for(let i=0;i<60;i++){
+      const a=Math.random()*Math.PI*2, sp=Math.random()*3+1;
+      parts.push({x:cx,y:cy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:Math.random()*60+50,color:col});
+    }
+  }
+  let t=0; (function loop(){
+    t++; ctx.fillStyle="rgba(0,0,0,.12)"; ctx.fillRect(0,0,canvas.width,canvas.height);
+    parts.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=.02; p.life--; ctx.fillStyle=p.color; ctx.fillRect(p.x,p.y,2,2);});
+    if(t<140) requestAnimationFrame(loop);
+  })();
+}
+
+/* ===== Render ===== */
+function render(){
+  answered=false; slot=5; elSlot.textContent=slot;
+  elStatus.textContent=''; elNext.disabled=true; elHintPanel.classList.remove('show');
+  elHintBtn.disabled=false; elHintBtn.classList.remove('used');
+  el5050.disabled=false; el5050.classList.remove('used');
+  elFreeze.disabled=false; elFreeze.classList.remove('used');
+
+  const it=ITEMS[idx];
+  elCaseId.textContent=`CASE-${it.id}`;
+  elStem.textContent=it.stem;
+
+  elChoices.innerHTML='';
+  it.opts.forEach((op,i)=>{
+    const btn=document.createElement('button');
+    btn.className='choice';
+    btn.innerHTML=`<b class="badge">${String.fromCharCode(65+i)}</b> ${op}`;
+    btn.addEventListener('click',()=>answer(i,btn));
+    elChoices.appendChild(btn);
+  });
+
+  startTimer();
+}
+function startTimer(){
+  clearInterval(timer); startTime=Date.now(); frozen=false; freezeLeft=0;
+  elTimebar.style.transform='scaleX(1)';
+  timer=setInterval(()=>{
+    if(frozen){ // show paused bar
+      return;
+    }
+    const e=Date.now()-startTime;
+    const left=Math.max(0,1 - e/perQms);
+    elTimebar.style.transform=`scaleX(${left})`;
+    if(left<=.2){ elTimebar.style.filter='saturate(1.4) brightness(1.1)'; }
+    if(Math.ceil((perQms-e)/1000)<=3){ tickSFX(); }
+    if(e>=perQms){ // time up
+      answered=true; showWrong(null);
+      nextAuto();
+    }
+  }, 60);
+}
+function pauseTimer(ms){
+  frozen=true; const t0=Date.now(); const keep=setInterval(()=>{
+    freezeLeft = ms - (Date.now()-t0);
+    if(freezeLeft<=0){ frozen=false; clearInterval(keep); }
+  },50);
+}
+
+function useHint(){
+  if(answered || elHintBtn.disabled) return;
+  const it=ITEMS[idx]; elHintText.textContent=it.hint;
+  elHintPanel.classList.add('show'); elHintBtn.classList.add('used'); elHintBtn.disabled=true;
+  slot=Math.max(3, slot-2); elSlot.textContent=slot; // เพดานลดเป็น 3 หากกดครั้งแรก
+}
+function use5050(){
+  if(answered || el5050.disabled) return;
+  const it=ITEMS[idx];
+  const wrongIdx=[0,1,2,3].filter(i=>i!==it.key);
+  // remove 2 wrong buttons (disable + fade)
+  shuffle(wrongIdx).slice(0,2).forEach(i=>{
+    const node=elChoices.children[i];
+    node.disabled=true; node.style.opacity=.4; node.style.filter='grayscale(60%)';
+  });
+  el5050.classList.add('used'); el5050.disabled=true;
+}
+function useFreeze(){
+  if(answered || elFreeze.disabled) return;
+  pauseTimer(5000);
+  elFreeze.classList.add('used'); elFreeze.disabled=true;
+}
+
+function answer(i,btn){
+  if(answered) return; answered=true;
+  const it=ITEMS[idx]; const nodes=[...document.querySelectorAll('.choice')];
+  nodes.forEach(n=>n.disabled=true);
+  if(i===it.key){
+    okSFX(); btn.classList.add('correct');
+    // speed bonus by remaining time
+    const leftScale=parseFloat(elTimebar.style.transform.replace('scaleX(','').replace(')','')) || 0;
+    const speedBonus = Math.round(leftScale*2); // 0..2
+    combo = Math.min(1.5, +(combo+0.1).toFixed(1));
+    const gained = Math.round((slot + speedBonus) * combo);
+    total += gained;
+    elStatus.innerHTML=`✅ ถูกต้อง! <span class="ok">+${gained}</span> (ฐาน ${slot}${speedBonus?` + เร็ว ${speedBonus}`:''}, คอมโบ x${combo.toFixed(1)})<br><small>เฉลย: ${it.opts[it.key]}</small>`;
+    elCombo.textContent = `x${combo.toFixed(1)}`;
+  }else{
+    showWrong(nodes[it.key], it);
+  }
+  elTotal.textContent=total; elNext.disabled=false; clearInterval(timer);
+}
+function showWrong(correctBtn,it=ITEMS[idx]){
+  badSFX(); if(correctBtn) correctBtn.classList.add('correct');
+  document.querySelectorAll('.choice').forEach(b=>{ if(!b.classList.contains('correct')) b.classList.add('wrong');});
+  combo=1.0; elCombo.textContent='x1.0';
+  elStatus.innerHTML=`❌ ผิด • เฉลย: <b>${it.opts[it.key]}</b><br><small>เหตุผล: ${it.why||'-'}</small>`;
+  elNext.disabled=false; clearInterval(timer);
+}
+function nextAuto(){ setTimeout(()=>{ idx++; if(idx<ITEMS.length) render(); else finish(); }, 420); }
+
+/* ===== Utilities ===== */
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ===== Buttons ===== */
+document.getElementById('nextBtn').addEventListener('click',()=>{idx++; if(idx<ITEMS.length) render(); else finish();});
+elHintBtn.addEventListener('click', useHint);
+el5050.addEventListener('click', use5050);
+elFreeze.addEventListener('click', useFreeze);
+
+/* ===== End ===== */
+function finish(){
+  document.getElementById('caseBox').style.display='none';
+  const end=document.getElementById('endCard');
+  const t=document.getElementById('endTitle');
+  const m=document.getElementById('endMsg');
+  let rank,note;
+  if(total>=90){rank='🛡️ Grammar Detective MASTER';note='สุดยอดนักสืบไวยากรณ์ของหน่วย!';}
+  else if(total>=70){rank='🎖️ Tense Warrior';note='เก่งมาก! พร้อมลุย EP ถัดไป';}
+  else{rank='🔰 Rookie Agent';note='ไม่เป็นไร ลองใหม่เพื่ออัปคอมโบ!';}
+  t.textContent='Mission Complete — Arcade EP';
+  m.innerHTML=`<b>คะแนนรวม: ${total} / ${ITEMS.length*10}</b><br><span class="rank">${rank}</span><br>${note}`;
+  end.classList.add('show');
+  fireworks(document.getElementById('fire1'));
+  setTimeout(()=>fireworks(document.getElementById('fire2')),260);
+}
+
+/* ===== Start ===== */
+render();
+</script>
+</body>
+</html>
